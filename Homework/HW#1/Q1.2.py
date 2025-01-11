@@ -1,6 +1,6 @@
 import numpy as np
 
-# Initialized values
+# Initialized values, Adjust when needed 
 # Define the system of linear equations in matrix form: Ax = b
 A = np.array([[6, 2, 1],
               [4, 10, 2],
@@ -8,7 +8,7 @@ A = np.array([[6, 2, 1],
 b = np.array([3, 4, 2])
 
 # Convergence criterion
-epsilon = 0.01
+epsilon = 0.01 # tolerance 
 
 # Maximum number of iterations 
 max_iterations = 1000 # prevent infinite loops
