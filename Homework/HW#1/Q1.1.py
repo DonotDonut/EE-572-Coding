@@ -46,6 +46,7 @@ while True:
     k += 1
 
 # Summary table
+print("Solving Problem with Jacobi Iterative Method")
 print('\nSummary Table:')
 print('Iteration\t x1\t\t x2\t\t x3\t\t Max Error (%)')
 print('-----------------------------------------------------------------------')
