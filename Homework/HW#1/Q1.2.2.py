@@ -16,10 +16,8 @@ max_error_percentage = 5
 # Initialize variables
 x = x0
 n = len(b)
-D = np.diag(np.diag(A))  # Diagonal matrix of A
-R = A - D  # R matrix (A - D)
 tolerance = 0.01 
-print("Solving Problem with Jacobi Iterative Method")
+print("Solving Problem with Gauss-Seidel Iterative Method")
 print("")
 
 # Display the header for the iteration table
@@ -30,8 +28,13 @@ print('-----------------------------------------------------------------------')
 k = 1
 
 while True:
-    # Calculate the new approximation
-    x_new = np.linalg.solve(D, b - np.dot(R, x))
+    x_new = np.copy(x)  # Copy the current x to use for updating
+
+    # Update each component of x sequentially
+    for i in range(n):
+        # Calculate the sum of A[i, j] * x[j] for j ≠ i
+        summation = np.dot(A[i, :], x_new) - A[i, i] * x_new[i]
+        x_new[i] = (b[i] - summation) / A[i, i]
     
     # Calculate the component-wise error
     error = np.abs((x_new - x) / x_new)
@@ -45,7 +48,7 @@ while True:
         break
     
     # Update the current approximation
-    x = x_new
+    x = np.copy(x_new)
     k += 1
 
 # Summary table
