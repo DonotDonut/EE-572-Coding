@@ -17,7 +17,7 @@ x = x0
 n = len(b)
 D = np.diag(np.diag(A))  # Diagonal matrix of A
 R = A - D  # R matrix (A - D)
-tolerance = max_error_percentage / 100
+tolerance = 0.01 
 
 # Display the header for the iteration table
 print('Iteration\t x1\t\t x2\t\t x3\t\t Max Error (%)')
