@@ -1,34 +1,52 @@
-# Let's test the provided code in Python
+import numpy as np
 
-from pprint import pprint
-from numpy import array, zeros, diag, diagflat, dot
+# Define the matrix A and vector b
+A = np.array([[6, 2, 1],
+              [4, 10, 2],
+              [3, 4, 14]])
+b = np.array([3, 4, 2])
 
-def jacobi(A, b, N=11, x=None):
-    """Solves the equation Ax=b via the Jacobi iterative method."""
-    # Create an initial guess if none is provided
-    if x is None:
-        x = zeros(len(A[0]))
+# Initial guess
+x0 = np.array([0.0, 0.0, 0.0])
 
-    # Extract the diagonal elements of A and create the R matrix
-    D = diag(A)  # Diagonal elements of A
-    R = A - diagflat(D)  # Remaining matrix without the diagonal
+# Maximum allowed component-wise error percentage
+max_error_percentage = 5
 
-    # Perform the iteration for N steps
-    for i in range(N):
-        x = (b - dot(R, x)) / D
-    return x
+# Initialize variables
+x = x0
+n = len(b)
+D = np.diag(np.diag(A))  # Diagonal matrix of A
+R = A - D  # R matrix (A - D)
+tolerance = max_error_percentage / 100
 
-# Input: Define a 3x3 matrix A, vector b, and an initial guess
-A = array([
-    [6.0, 2.0, 1.0],
-    [4.0, 10.0, 2.0],
-    [3.0, 4.0, 14.0]
-])
-b = array([3.0, 4.0, 2.0])  # Right-hand side vector
-guess = array([0.0, 0.0, 0.0])  # Initial guess for x
+# Display the header for the iteration table
+print('Iteration\t x1\t\t x2\t\t x3\t\t Max Error (%)')
+print('-----------------------------------------------------------------------')
 
-# Solve the system using the Jacobi method
-solution = jacobi(A, b, N=11, x=guess)
+# Iteration counter
+k = 1
 
-# Output the solution
-pprint(solution)
+while True:
+    # Calculate the new approximation
+    x_new = np.linalg.solve(D, b - np.dot(R, x))
+    
+    # Calculate the component-wise error
+    error = np.abs((x_new - x) / x_new)
+    max_error = np.max(error) * 100  # Convert to percentage
+    
+    # Print the current iteration, the values of x, and the max error percentage
+    print(f'{k}\t\t {x_new[0]:.6f}\t {x_new[1]:.6f}\t {x_new[2]:.6f}\t {max_error:.2f}%')
+    
+    # Check if the maximum component-wise error is below the tolerance
+    if max_error < max_error_percentage:
+        break
+    
+    # Update the current approximation
+    x = x_new
+    k += 1
+
+# Summary table
+print('\nSummary Table:')
+print('Iteration\t x1\t\t x2\t\t x3\t\t Max Error (%)')
+print('-----------------------------------------------------------------------')
+print(f'{k}\t\t {x_new[0]:.6f}\t {x_new[1]:.6f}\t {x_new[2]:.6f}\t {max_error:.2f}%')
