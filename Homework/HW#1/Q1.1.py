@@ -18,6 +18,8 @@ n = len(b)
 D = np.diag(np.diag(A))  # Diagonal matrix of A
 R = A - D  # R matrix (A - D)
 tolerance = 0.01 
+print("Solving Problem with Jacobi Iterative Method")
+print("")
 
 # Display the header for the iteration table
 print('Iteration\t x1\t\t x2\t\t x3\t\t Max Error (%)')
@@ -46,7 +48,6 @@ while True:
     k += 1
 
 # Summary table
-print("Solving Problem with Jacobi Iterative Method")
 print('\nSummary Table:')
 print('Iteration\t x1\t\t x2\t\t x3\t\t Max Error (%)')
 print('-----------------------------------------------------------------------')
