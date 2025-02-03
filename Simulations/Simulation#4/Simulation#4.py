@@ -199,3 +199,5 @@ while accuracy >= 0.001 and iteration < max_iter:
 print("V2 Amplitude (p.u.):", Vmag[1])
 print("V2 Angle (radians):", delta[1])
 print("V3 Angle (radians):", delta[2])
+print("V2 Angle (degrees):", np.degrees(delta[1]))
+print("V3 Angle (degrees):", np.degrees(delta[2]))
