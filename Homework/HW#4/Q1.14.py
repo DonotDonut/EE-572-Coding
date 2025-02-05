@@ -5,8 +5,8 @@ import numpy as np
 #   Columns: [From, To, R, X, Y/2] (in perunit)
 linedata = np.array([
     [1, 2, 0,   0.1, 0],
-    [1, 3, 0,   0.1, 0],
-    [2, 3, 0,   0.1, 0]
+    [1, 3, 0,   0.4, 0],
+    [2, 3, 0,   0.2, 0]
 ], dtype=float)
 
 # Bus Data
@@ -14,8 +14,8 @@ linedata = np.array([
 # Bus Types: Slack = 1, PV = 2, PQ = 3
 busdata = np.array([
     [1, 1,   0,   0,   0, 0, 1, 0, 0, 0],
-    [2, 3,   0,   0,   2, 1, 1, 0, 0, 0],
-    [3, 2, 0.3,   0,   0, 0, 1, 0, 0, 0]
+    [2, 3,   0,   0,   2, 0.5, 1, 0, 0, 0],
+    [3, 2,   1,   0,   0, 0, 1, 0, 0, 0]
 ], dtype=float)
 
 

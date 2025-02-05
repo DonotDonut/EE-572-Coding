@@ -4,9 +4,7 @@ import numpy as np
 # Line Data 
 #   Columns: [From, To, R, X, Y/2] (in perunit)
 linedata = np.array([
-    [1, 2, 0,   0.2, 0],
-    [1, 3, 0,   0.2, 0],
-    [2, 3, 0,   0.2, 0]
+    [1, 2, 0,   0.1, 0],
 ], dtype=float)
 
 # Bus Data
@@ -14,8 +12,7 @@ linedata = np.array([
 # Bus Types: Slack = 1, PV = 2, PQ = 3
 busdata = np.array([
     [1, 1,   0,   0,   0, 0, 1, 0, 0, 0],
-    [2, 3,   0,   0,   1, 0.5, 1, 0, 0, 0],
-    [3, 3,   0,   0,   1.5, 0.75, 1, 0, 0, 0]
+    [2, 3,   0,   0,   1.5, 0.5, 1, 0, 0, 0.1],
 ], dtype=float)
 
 
@@ -198,8 +195,5 @@ while accuracy >= 0.001 and iteration < max_iter:
 
 # Display Specific Results
 print("V2 Amplitude (p.u.):", Vmag[1])
-print("V3 Amplitude (p.u.):", Vmag[2])
 print("V2 Angle (radians):", delta[1])
-print("V3 Angle (radians):", delta[2])
 print("V2 Angle (degrees):", np.degrees(delta[1]))
-print("V3 Angle (degrees):", np.degrees(delta[2]))
