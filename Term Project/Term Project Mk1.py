@@ -48,14 +48,17 @@ def parse_bus_data(bus_data):
         
         #bus Type: 3 = slack, 2 PV, 1 PQ, 0 = isolated  
         bus_type = int(values[5])
-        PG = float(values[10]) / 100
-        QG = float(values[11]) / 100
-        Pd = float(values[8]) / 100
-        Qd = float(values[9]) / 100
+        
+        # all values are in per unit, using 100 as the Sbase value 
+        # 
+        PG = float(values[10]) / 100 # Real Power generated from Generator 
+        QG = float(values[11]) / 100 # Reactive Power generated from Generator 
+        Pd = float(values[8]) / 100 # Real Power delievered to  load  
+        Qd = float(values[9]) / 100 # Reactive Power delievered to load 
         voltage_magnitude = float(values[6])
         voltage_angle = float(values[7])
-        Qmin = float(values[13]) / 100
-        Qmax = float(values[12]) / 100
+        Qmin = float(values[13]) / 100 # max allowed for power generation 
+        Qmax = float(values[12]) / 100 # min allowed for power generation 
 
         # Adding the check for QG
         if QG < Qmin:
