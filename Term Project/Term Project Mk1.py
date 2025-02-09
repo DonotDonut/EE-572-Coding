@@ -1,8 +1,7 @@
 import numpy as np
 
-# initalize Methods 
+# Initialize Methods 
 def read_File(file_path, bus_start_marker, branch_start_marker, stop_marker):
-   
     bus_data = []
     branch_data = []
     reading_bus_data = False
@@ -48,52 +47,40 @@ def parse_bus_data(bus_data):
         values = line.split()
         bus_number = int(values[0])
         
-        #bus Type: 3 = slack, 2 = PV, 1 = PQ, 0 = isolated  
+        # Bus Type: 3 = slack, 2 = PV, 1 = PQ, 0 = isolated  
         bus_type = int(values[5])
         
-        # all values are in per unit, using 100 as the Sbase value 
-        # 
-        PG = float(values[10]) / 100 # Real Power generated from Generator 
-        QG = float(values[11]) / 100 # Reactive Power generated from Generator 
-        Pd = float(values[8]) / 100 # Real Power delievered to  load  
-        Qd = float(values[9]) / 100 # Reactive Power delievered to load 
-        Vmag = float(values[6]) # voltage_magnitude
-        delta = float(values[7]) # voltage_angle
-        Qmin = float(values[15]) / 100 # max allowed for power generation 
-        Qmax = float(values[14]) / 100 # min allowed for power generation 
+        # All values are in per unit, using 100 as the Sbase value 
+        PG = float(values[10]) / 100  # Real Power generated from Generator 
+        QG = float(values[11]) / 100  # Reactive Power generated from Generator 
+        Pd = float(values[8]) / 100   # Real Power delivered to load  
+        Qd = float(values[9]) / 100   # Reactive Power delivered to load 
+        Vmag = float(values[6])       # Voltage magnitude
+        delta = float(values[7])      # Voltage angle
+        Qmin = float(values[15]) / 100 # Min allowed for power generation 
+        Qmax = float(values[14]) / 100 # Max allowed for power generation 
         
         bus_info.append((bus_number, bus_type, PG, QG, Pd, Qd, Vmag, delta, Qmin, Qmax))
     return np.array(bus_info)
 
-# Code starts running here AKA main Method --------
+# Code starts running here (Main Method)
 file_path0 = 'Term Project/ieee14cdf.txt'
 
-# markers for reading 
+# Markers for reading 
 bus_start_marker = "BUS DATA FOLLOWS"
 branch_start_marker = "BRANCH DATA FOLLOWS"
 stop_marker = "-999"
     
-#reading file 
+# Reading file 
 bus_data, branch_data = read_File(file_path0, bus_start_marker, branch_start_marker, stop_marker)    
-'''
-    # Display the values of Bus and Branch data 
-print("Bus Data:")
-for data in bus_data:
-    print(data)
 
-print("\nBranch Data:")
-for data in branch_data:
-    print(data)
-'''
-    
-# getting specific data from the branch section in the files text
+# Getting specific data from the branch section in the files text
 branch_info = parse_branch_data(branch_data)
 
-# printing branch data 
+# Printing branch data 
 print(f"\nBranch Data")
 for branch in branch_info:
     print(f"From Bus: {branch[0]}, To Bus: {branch[1]}, Resistance: {branch[2]}, Reactance: {branch[3]}, Line Charging: {branch[4]}")
-
 
 bus_info = parse_bus_data(bus_data)
 
@@ -101,4 +88,101 @@ bus_info = parse_bus_data(bus_data)
 print(f"\nBus Data")
 for bus in bus_info:
     print(f"Bus#: {bus[0]}, Type: {bus[1]}, PG: {bus[2]}, QG: {bus[3]}, Pd: {bus[4]}, Qd: {bus[5]}, |V|: {bus[6]}, Delta: {bus[7]}, Qmin: {bus[8]}, Qmax: {bus[9]}")
+
+# Y-Bus Formation
+R = branch_info[:, 2]
+X = branch_info[:, 3]
+B = 1j * branch_info[:, 4]  # Y/2 term multiplied by j
+Z = R + 1j * X
+Y_line = 1.0 / Z
+
+nline = len(branch_info)
+nbus = int(np.max(branch_info[:, :2]))
+
+# Initialize Ybus matrix
+Ybus = np.zeros((nbus, nbus), dtype=complex)
+
+for k in range(nline):
+    i = int(branch_info[k, 0]) - 1
+    j = int(branch_info[k, 1]) - 1
+
+    # Off-diagonal elements
+    Ybus[i, j] -= Y_line[k]
+    Ybus[j, i] = Ybus[i, j]
+
+    # Diagonal elements
+    Ybus[i, i] += Y_line[k] + B[k]
+    Ybus[j, j] += Y_line[k] + B[k]
+
+Ymag = np.abs(Ybus)  # Admittance magnitude 
+theta = np.angle(Ybus)  # Admittance angle 
+
+# Extract bus data
+bus_type = bus_info[:, 1].copy()
+Pg = bus_info[:, 2].copy()
+Qg = bus_info[:, 3].copy()
+Pd = bus_info[:, 4].copy()
+Qd = bus_info[:, 5].copy()
+Qmin = bus_info[:, 8].copy()
+Qmax = bus_info[:, 9].copy()
+Vmag = bus_info[:, 6].copy()
+delta = bus_info[:, 7].copy()
+
+# Form the complex voltage vector
+V = Vmag * (np.cos(delta) + 1j * np.sin(delta))
+
+# Scheduled net injections:
+P_sch = Pg - Pd
+Q_sch = Qg - Qd
+
+accuracy = 1.0
+iteration = 1
+max_iter = 10  
+
+while accuracy >= 0.001 and iteration < max_iter:
+    P_cal = np.zeros(nbus)
+    Q_cal = np.zeros(nbus)
+    
+    for i in range(1, nbus):
+        for n in range(nbus):
+            angle_term = theta[i, n] + delta[n] - delta[i]
+            P_cal[i] += Vmag[i] * Vmag[n] * Ymag[i, n] * np.cos(angle_term)
+            Q_cal[i] -= Vmag[i] * Vmag[n] * Ymag[i, n] * np.sin(angle_term)
+
+    DP = P_sch[1:] - P_cal[1:]
+    PQ_indices = np.where(bus_info[:, 1] == 1)[0]
+    DQ = Q_sch[PQ_indices] - Q_cal[PQ_indices]
+
+    # Jacobian Matrix Calculation
+    J1 = np.zeros((nbus, nbus))
+    J2 = np.zeros((nbus, nbus))
+
+    for i in range(nbus):
+        for n in range(nbus):
+            angle_term = theta[i, n] + delta[n] - delta[i]
+            J1[i, n] = -Vmag[i] * Vmag[n] * Ymag[i, n] * np.sin(angle_term)
+            J2[i, n] = Vmag[i] * Ymag[i, n] * np.cos(angle_term)
+
+    non_slack = np.where(bus_info[:, 1] != 3)[0]
+    J11 = J1[np.ix_(non_slack, non_slack)]
+    J22 = J2[np.ix_(non_slack, PQ_indices)]
+
+    J = np.block([[J11, J22]])
+    DF = np.concatenate((DP, DQ))
+    DX = np.linalg.solve(J, DF)
+
+    delta[non_slack] += DX[:len(non_slack)]
+    Vmag[PQ_indices] += DX[len(non_slack):]
+
+    accuracy = np.linalg.norm(DF)
+    iteration += 1
+
+
+# Display Results of Amplitude and Angle of Each Bus
+print("\nFinal Bus Voltages:")
+print(f"{'Bus#':<5} {'|V| (p.u.)':<12} {'Angle (radians)':<18} {'Angle (degrees)'}")
+print("-" * 50)
+
+for n in range(nbus):
+    print(f"{n+1:<5} {Vmag[n]:<12.6f} {delta[n]:<18.6f} {np.degrees(delta[n]):.6f}")
 
