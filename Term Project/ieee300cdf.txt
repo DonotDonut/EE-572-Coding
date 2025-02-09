@@ -1,4 +1,3 @@
-TAPE
  13/05/91 CYME INTERNATIONAL    100.0 1991 S IEEE 300-BUS TEST SYSTEM
 BUS DATA FOLLOWS                              300 ITEMS
    1  1            1  1  0 1.0284   5.95    90.00    49.00     0.00    0.00  115.00 0.0000    0.00    0.00  0.0000  0.0000    0    1
