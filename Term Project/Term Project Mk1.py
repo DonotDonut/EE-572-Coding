@@ -65,6 +65,10 @@ def parse_bus_data(bus_data):
 
 # Code starts running here (Main Method)
 file_path0 = 'Term Project/ieee14cdf.txt'
+file_path1 = 'Term Project/ieee30cdf.txt'
+file_path2 = 'Term Project/ieee57cdf.txt'
+file_path3 = 'Term Project/ieee118cdf.txt' #issue here with DX 
+file_path4 = 'Term Project/ieee300cdf.txt' #issue here with DX 
 
 # Markers for reading 
 bus_start_marker = "BUS DATA FOLLOWS"
@@ -72,22 +76,24 @@ branch_start_marker = "BRANCH DATA FOLLOWS"
 stop_marker = "-999"
     
 # Reading file 
-bus_data, branch_data = read_File(file_path0, bus_start_marker, branch_start_marker, stop_marker)    
+bus_data, branch_data = read_File(file_path3, bus_start_marker, branch_start_marker, stop_marker)    
 
 # Getting specific data from the branch section in the files text
 branch_info = parse_branch_data(branch_data)
-
+'''
 # Printing branch data 
 print(f"\nBranch Data")
 for branch in branch_info:
     print(f"From Bus: {branch[0]}, To Bus: {branch[1]}, Resistance: {branch[2]}, Reactance: {branch[3]}, Line Charging: {branch[4]}")
+'''
 
 bus_info = parse_bus_data(bus_data)
-
+'''
 # Print extracted bus info
 print(f"\nBus Data")
 for bus in bus_info:
     print(f"Bus#: {bus[0]}, Type: {bus[1]}, PG: {bus[2]}, QG: {bus[3]}, Pd: {bus[4]}, Qd: {bus[5]}, |V|: {bus[6]}, Delta: {bus[7]}, Qmin: {bus[8]}, Qmax: {bus[9]}")
+'''
 
 # Y-Bus Formation
 R = branch_info[:, 2]
@@ -135,45 +141,132 @@ V = Vmag * (np.cos(delta) + 1j * np.sin(delta))
 P_sch = Pg - Pd
 Q_sch = Qg - Qd
 
-accuracy = 1.0
-iteration = 1
-max_iter = 10  
+accuracy = 1.0 # edit when needed 
+iteration = 1 # edit when needed 
+max_iter = 10 # edit when needed 
 
 while accuracy >= 0.001 and iteration < max_iter:
+    # Initialize calculated power arrays
     P_cal = np.zeros(nbus)
     Q_cal = np.zeros(nbus)
     
+    # Loop over non-slack buses (in MATLAB: i=2:nbus; here indices 1...nbus-1)
     for i in range(1, nbus):
         for n in range(nbus):
             angle_term = theta[i, n] + delta[n] - delta[i]
             P_cal[i] += Vmag[i] * Vmag[n] * Ymag[i, n] * np.cos(angle_term)
             Q_cal[i] -= Vmag[i] * Vmag[n] * Ymag[i, n] * np.sin(angle_term)
-
+        
+        # Q limit checking for PV buses (bus type == 2 in original, but here if Qmax != 0)
+        if Qmax[i] != 0:
+            if Q_cal[i] > Qmax[i]:
+                Q_cal[i] = Qmax[i]
+                bus_info[i, 1] = 3  # Temporarily convert PV to PQ
+            elif Q_cal[i] < Qmin[i]:
+                Q_cal[i] = Qmin[i]
+                bus_info[i, 1] = 3  # Temporarily convert PV to PQ
+            else:
+                bus_info[i, 1] = 2  # Restore PV bus type
+                Vmag[i] = bus_info[i, 6]
+    
+    # Form the mismatch vectors.
+    # For P: ignore slack bus (index 0)
     DP = P_sch[1:] - P_cal[1:]
-    PQ_indices = np.where(bus_info[:, 1] == 1)[0]
+    
+    # For Q: use only buses that are PQ (bus type == 3)
+    PQ_indices = np.where(bus_info[:, 1] == 3)[0]
     DQ = Q_sch[PQ_indices] - Q_cal[PQ_indices]
-
+    
+    
     # Jacobian Matrix Calculation
+    # J1: dP/d(delta)
     J1 = np.zeros((nbus, nbus))
+    for i in range(nbus):
+        for n in range(nbus):
+            if n != i:
+                sin_term = np.sin(theta[i, n] + delta[n] - delta[i])
+                J1[i, i] += Vmag[i] * Vmag[n] * Ymag[i, n] * sin_term
+                J1[i, n] = - Vmag[i] * Vmag[n] * Ymag[i, n] * sin_term
+                # Symmetry: (optional) J1[n,i] = J1[i,n]
+                J1[n, i] = J1[i, n]
+                
+    # Remove slack bus rows and columns (i.e. bus type not equal to 1)
+    non_slack = np.where(bus_info[:, 1] != 1)[0]
+    J11 = J1[np.ix_(non_slack, non_slack)]
+    
+    # J2: dP/d(V)
     J2 = np.zeros((nbus, nbus))
-
     for i in range(nbus):
         for n in range(nbus):
             angle_term = theta[i, n] + delta[n] - delta[i]
-            J1[i, n] = -Vmag[i] * Vmag[n] * Ymag[i, n] * np.sin(angle_term)
-            J2[i, n] = Vmag[i] * Ymag[i, n] * np.cos(angle_term)
-
-    non_slack = np.where(bus_info[:, 1] != 3)[0]
-    J11 = J1[np.ix_(non_slack, non_slack)]
+            if n != i:
+                J2[i, i] += Vmag[n] * Ymag[i, n] * np.cos(angle_term)
+                J2[i, n] = Vmag[i] * Ymag[i, n] * np.cos(angle_term)
+                J2[n, i] = J2[i, n]
+            else:
+                # For n == i add the self term
+                J2[i, i] += 2 * Vmag[i] * Ymag[i, i] * np.cos(theta[i, i])
+                
+    # For J2, only non-slack rows and PQ (type==3) columns are used:
     J22 = J2[np.ix_(non_slack, PQ_indices)]
+    
+    # J3: dQ/d(delta)
+    J3 = np.zeros((nbus, nbus))
+    for i in range(nbus):
+        for n in range(nbus):
+            angle_term = theta[i, n] + delta[n] - delta[i]
+            if n != i:
+                J3[i, i] += Vmag[i] * Vmag[n] * Ymag[i, n] * np.cos(angle_term)
+                J3[i, n] = - Vmag[i] * Vmag[n] * Ymag[i, n] * np.cos(angle_term)
+                J3[n, i] = J3[i, n]
+                
+    # For J3, only PQ rows and non-slack columns are used:
+    J33 = J3[np.ix_(PQ_indices, non_slack)]
+    
+    # J4: dQ/d(V)
+    J4 = np.zeros((nbus, nbus))
+    for i in range(nbus):
+        for n in range(nbus):
+            if n == i:
+                J4[i, i] = J4[i, i] - 2 * Vmag[i] * Ymag[i, i] * np.sin(theta[i, i])
+            else:
+                angle_term = theta[i, n] + delta[n] - delta[i]
+                J4[i, i] = J4[i, i] - Vmag[n] * Ymag[i, n] * np.sin(angle_term)
+            
+    # For J4, only PQ rows and PQ columns are used:
+    J44 = J4[np.ix_(PQ_indices, PQ_indices)]
+    
+    # Debugging prints
+    print("Size of DP:", DP.shape)
+    print("Size of DQ:", DQ.shape)
+        
+    # Ensure correct assembly of J
+    print("J11 Shape:", J11.shape)
+    print("J22 Shape:", J22.shape)
+    print("J33 Shape:", J33.shape)
+    print("J44 Shape:", J44.shape)
+    
+    # Assemble the full Jacobian
+    J = np.block([
+        [J11, J22],
+        [J33, J44]
+    ])
+    
 
-    J = np.block([[J11, J22]])
+    # Correction Vector Calculation
     DF = np.concatenate((DP, DQ))
     DX = np.linalg.solve(J, DF)
-
-    delta[non_slack] += DX[:len(non_slack)]
-    Vmag[PQ_indices] += DX[len(non_slack):]
-
+    
+    # Update voltage angles (delta) for non-slack buses
+    num_non_slack = len(non_slack)
+    delta[non_slack] = delta[non_slack] + DX[0:num_non_slack]
+    
+    # Update voltage magnitudes for PQ buses
+    num_pq = len(PQ_indices)
+    if num_pq > 0:
+        deltaV = DX[num_non_slack:]
+        Vmag[PQ_indices] = Vmag[PQ_indices] + deltaV
+    
     accuracy = np.linalg.norm(DF)
     iteration += 1
 
