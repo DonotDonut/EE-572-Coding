@@ -41,6 +41,8 @@ def parse_branch_data(branch_data):
         branch_info.append((from_bus, to_bus, resistance, reactance, line_charging))
     return np.array(branch_info)
 
+
+
 def parse_bus_data(bus_data):
     bus_info = []
     for line in bus_data:
@@ -60,8 +62,17 @@ def parse_bus_data(bus_data):
         Qmin = float(values[15]) / 100 # Min allowed for power generation 
         Qmax = float(values[14]) / 100 # Max allowed for power generation 
         
+        # setting inital guess 
+        # Check bus type conditions:
+        if bus_type == 0:  # PQ bus
+            Vmag = 1.0
+            delta = 0.0
+        elif bus_type == 2:  # PV bus
+            delta = 0.0
+
         bus_info.append((bus_number, bus_type, PG, QG, Pd, Qd, Vmag, delta, Qmin, Qmax))
     return np.array(bus_info)
+
 
 # Code starts running here (Main Method)
 file_path0 = 'Term Project/ieee14cdf.txt'
@@ -76,11 +87,11 @@ branch_start_marker = "BRANCH DATA FOLLOWS"
 stop_marker = "-999"
     
 # Reading file 
-bus_data, branch_data = read_File(file_path0, bus_start_marker, branch_start_marker, stop_marker)    
+bus_data, branch_data = read_File(file_path1, bus_start_marker, branch_start_marker, stop_marker)    
 
 # Getting specific data from the branch section in the files text
 branch_info = parse_branch_data(branch_data)
-'''
+#'''
 # Printing branch data 
 print(f"\nBranch Data")
 for branch in branch_info:
@@ -149,8 +160,8 @@ Q_sch = Qg - Qd
 
 # Convergence parameters:
 mismatch_tol = 0.001  # tolerance for power mismatch norm
-epsilon = 1e-6        # tolerance for state variable change (voltage magnitudes and angles)
-max_iter = 1         # maximum iterations
+epsilon = 0.001        # tolerance for state variable change (voltage magnitudes and angles)
+max_iter = 100        # maximum iterations
 
 accuracy = np.inf
 iteration = 1
