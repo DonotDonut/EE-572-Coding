@@ -91,7 +91,7 @@ bus_data, branch_data = read_File(file_path1, bus_start_marker, branch_start_mar
 
 # Getting specific data from the branch section in the files text
 branch_info = parse_branch_data(branch_data)
-#'''
+'''
 # Printing branch data 
 print(f"\nBranch Data")
 for branch in branch_info:
