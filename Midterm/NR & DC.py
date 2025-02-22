@@ -155,86 +155,7 @@ def newton_raphson_3bus(Y_bus, V2_spec, PG2_spec, P3_load, Q3_load,
 
     return x
 
-###############################################################################
-# 4) FAST DECOUPLED POWER FLOW
-###############################################################################
-def fast_decoupled_3bus(Y_bus, V2_spec, PG2_spec, P3_load, Q3_load,
-                        tol=1e-8, max_iter=50, verbose=True):
-    """
-    Solve the same 3-bus system using the classical Fast Decoupled approach.
-    We'll decouple P–θ and Q–V. For a 3‑bus system:
-      - Slack bus is bus1 => known angle
-      - We solve for theta2, theta3 in the P–θ step
-      - We solve for V3 in the Q–V step (bus2's voltage is known, bus3's voltage is unknown)
-    """
-    # Imag part of Y_bus => B = -Im(Y_bus)
-    B_full = -Y_bus.imag
-    
-    # For P–θ: ignoring shunts, we focus on lines => B' submatrix for buses 2,3
-    # Slack bus = bus0 => submatrix is B_full[1:3, 1:3]
-    Bp = B_full[1:3, 1:3]
-    
-    # For Q–V: bus3 is the only PQ bus => submatrix is 1×1 => Bq = B_full[2,2]
-    # We'll also typically ignore line charging for B'' but keep it simple here
-    Bq = B_full[2,2]
-    
-    # Initialize unknowns
-    theta2 = 0.0
-    theta3 = 0.0
-    V3 = 1.0
 
-    def calc_p_mismatch(t2, t3, v3):
-        """Return [dP2, dP3]."""
-        V1c = 1.0*np.exp(j*0.0)
-        V2c = V2_spec*np.exp(j*t2)
-        V3c = v3*np.exp(j*t3)
-        V = np.array([V1c, V2c, V3c])
-        S_calc = calc_power_injections(V, Y_bus)
-        P_calc = S_calc.real
-        
-        dP2 = PG2_spec - P_calc[1]
-        dP3 = -P3_load - P_calc[2]
-        return np.array([dP2, dP3])
-
-    def calc_q_mismatch(t3, v3):
-        """Return [dQ3] only, since bus3 is the PQ bus."""
-        V1c = 1.0*np.exp(j*0.0)
-        V2c = V2_spec*np.exp(j*theta2)
-        V3c = v3*np.exp(j*t3)
-        V = np.array([V1c, V2c, V3c])
-        S_calc = calc_power_injections(V, Y_bus)
-        Q_calc = S_calc.imag
-        
-        dQ3 = -Q3_load - Q_calc[2]
-        return np.array([dQ3])
-
-    for it in range(max_iter):
-        # --- P–θ update ---
-        dP = calc_p_mismatch(theta2, theta3, V3)
-        # Solve Bp * dTheta = dP
-        dTheta = np.linalg.solve(Bp, dP)
-        theta2 += dTheta[0]
-        theta3 += dTheta[1]
-        
-        # --- Q–V update ---
-        dQ3 = calc_q_mismatch(theta3, V3)
-        # Solve Bq * dV3 = dQ3
-        dV3 = dQ3[0] / Bq
-        V3 += dV3
-        
-        max_mis = max(np.max(np.abs(dP)), np.max(np.abs(dQ3)))
-        if verbose:
-            print(f"[FDPF] Iter {it+1}, dP={dP}, dQ3={dQ3}, "
-                  f"theta2={theta2:.5f}, theta3={theta3:.5f}, V3={V3:.5f}, max|mis|={max_mis}")
-        
-        if max_mis < tol:
-            if verbose:
-                print("Fast Decoupled PF converged.\n")
-            break
-    else:
-        print("Fast Decoupled PF did NOT converge within max_iter.\n")
-
-    return theta2, theta3, V3
 
 ###############################################################################
 # 5) DC POWER FLOW
@@ -299,31 +220,7 @@ if __name__ == "__main__":
         print(f"    Loss = {S_loss.real:.4f} + j{S_loss.imag:.4f} p.u.")
     print()
 
-    print("============================================")
-    print(" 2) FAST DECOUPLED POWER FLOW ")
-    print("============================================")
-    t2_FD, t3_FD, v3_FD = fast_decoupled_3bus(
-        Y_bus, V2, PG2, P3_load, Q3_load,
-        tol=1e-8, max_iter=50, verbose=True
-    )
-    V_FD = np.array([
-        1.0*np.exp(j*0.0),
-        V2*np.exp(j*t2_FD),
-        v3_FD*np.exp(j*t3_FD)
-    ])
-    print("Final bus voltages (FDPF):")
-    for b in range(3):
-        mag = np.abs(V_FD[b])
-        ang = np.angle(V_FD[b], deg=True)
-        print(f"  Bus {b+1}: |V|={mag:.4f}, angle={ang:.2f} deg")
-    flows_FD = line_flows(V_FD)
-    print("\nLine flows and losses (FDPF):")
-    for (i,j), (S_ij, S_ji, S_loss) in flows_FD.items():
-        print(f"  Line {i}-{j}:")
-        print(f"    S_ij = {S_ij.real:.4f} + j{S_ij.imag:.4f} p.u.")
-        print(f"    S_ji = {S_ji.real:.4f} + j{S_ji.imag:.4f} p.u.")
-        print(f"    Loss = {S_loss.real:.4f} + j{S_loss.imag:.4f} p.u.")
-    print()
+    
 
     print("============================================")
     print(" 3) DC POWER FLOW ")
