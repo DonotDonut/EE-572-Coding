@@ -42,7 +42,6 @@ def parse_branch_data(branch_data):
     return np.array(branch_info)
 
 
-
 def parse_bus_data(bus_data):
     bus_info = []
     for line in bus_data:
@@ -75,11 +74,12 @@ def parse_bus_data(bus_data):
 
 
 # Code starts running here (Main Method)
-file_path0 = 'Term Project/ieee14cdf.txt'
-file_path1 = 'Term Project/ieee30cdf.txt'
-file_path2 = 'Term Project/ieee57cdf.txt'
-file_path3 = 'Term Project/ieee118cdf.txt'  # issue here with DX 
-file_path4 = 'Term Project/ieee300cdf.txt'   # issue here with DX 
+#locations for test cases 
+TestCase14 = 'Term Project/ieee14cdf.txt'
+TestCase30 = 'Term Project/ieee30cdf.txt'
+TestCase57 = 'Term Project/ieee57cdf.txt'
+TestCase118 = 'Term Project/ieee118cdf.txt'  
+TestCase300 = 'Term Project/ieee300cdf.txt'  
 
 # Markers for reading 
 bus_start_marker = "BUS DATA FOLLOWS"
@@ -87,9 +87,9 @@ branch_start_marker = "BRANCH DATA FOLLOWS"
 stop_marker = "-999"
     
 # Reading file 
-bus_data, branch_data = read_File(file_path1, bus_start_marker, branch_start_marker, stop_marker)    
+bus_data, branch_data = read_File(TestCase118, bus_start_marker, branch_start_marker, stop_marker)    
 
-# Getting specific data from the branch section in the files text
+# Getting specific data from the branch section from the files text
 branch_info = parse_branch_data(branch_data)
 '''
 # Printing branch data 
@@ -97,7 +97,8 @@ print(f"\nBranch Data")
 for branch in branch_info:
     print(f"From Bus: {branch[0]}, To Bus: {branch[1]}, Resistance: {branch[2]}, Reactance: {branch[3]}, Line Charging: {branch[4]}")
 #'''
-
+print(len(bus_data)) 
+# Getting specific data from the bus section from the files text
 bus_info = parse_bus_data(bus_data)
 '''
 # Print extracted bus info
@@ -114,12 +115,15 @@ B = 1j * branch_info[:, 4]  # Note: Y/2 term multiplied by j
 Z = R + 1j * X
 Y_line = 1.0 / Z
 
+# Find the index of the slack bus
+slack_index = np.where(bus_info[:, 1] == 3)[0][0]
+
 nline = len(branch_info)
 # Bus numbers in linedata are given as 1-indexed numbers.
 nbus = int(np.max(branch_info[:, :2]))
 ng = np.sum(bus_info[:, 1] == 2)  # number of generator (PV) buses
 
-# Initialize Ybus (Python indexing: 0 ... nbus-1)
+# Initialize Ybus 
 Ybus = np.zeros((nbus, nbus), dtype=complex)
 
 for k in range(nline):
@@ -151,7 +155,8 @@ Qmax = bus_info[:, 9].copy()
 Vmag = bus_info[:, 6].copy()
 delta = bus_info[:, 7].copy()
 
-# Form the complex voltage vector (will be updated during iterations)
+# Form the complex voltage vector 
+# will be updated during iterations 
 V = Vmag * (np.cos(delta) + 1j * np.sin(delta))
 
 # Scheduled net injections:
@@ -161,10 +166,10 @@ Q_sch = Qg - Qd
 # Convergence parameters:
 mismatch_tol = 0.001  # tolerance for power mismatch norm
 epsilon = 0.001        # tolerance for state variable change (voltage magnitudes and angles)
-max_iter = 100        # maximum iterations
+max_iter = 3      # maximum iterations
 
-accuracy = np.inf
-iteration = 1
+accuracy = 1 #edit if needed 
+iteration = 1        #edit if needed 
 
 while iteration <= max_iter:
     # Save current state (angles and voltage magnitudes) for convergence checking:
@@ -282,12 +287,12 @@ while iteration <= max_iter:
     accuracy = np.linalg.norm(DF)
     #print(f"Iteration {iteration}: mismatch norm = {accuracy:.6f}, state change = {state_change:.6e}")
     
-    # Check convergence on state variables:
+    # Check criteria convergence 
     if state_change < epsilon:
         print("Convergence reached on voltage magnitude/angle update.")
         break
     
-    # Alternatively, if power mismatch is small enough, you might also choose to stop:
+    # if power mismatch is small enough 
     if accuracy < mismatch_tol:
         print("Convergence reached on power mismatch.")
         break
