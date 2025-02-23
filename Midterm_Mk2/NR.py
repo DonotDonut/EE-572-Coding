@@ -6,14 +6,14 @@ import numpy as np
 
 def calc_power_injections(V, Y):
     I = Y @ V                 
-    S = V * np.conjugate(I)    # S_k = V_k * conj(I_k)
-    return S  # array of length N
+    S = V * np.conjugate(I)    
+    return S  
 
 def line_flows(V):
     flows = {}
-    lines = [(0,1), (1,2), (0,2)] # lines (1-2), (2-3), (1-3) 
+    lines = [(0,1), (1,2), (0,2)] 
     
-    # Off-diagonal line admittance 
+
     Y_line = -1.0 / ZL  
     
     for (i,j) in lines:
@@ -31,17 +31,16 @@ def line_flows(V):
 
 
 # Newton Rapshon Power Flow Algorithm -------------------------------------
-def newton_raphson_3bus(Y_bus, V2_spec, PG2_spec, P3_load, Q3_load,
-                        tol, max_iter, verbose=True):
+def newton_raphson_3bus(Y_bus, V2_spec, PG2_spec, P3_load, Q3_load, tol, max_iter, verbose=True):
   
     # x = [theta2, theta3, V3]
     x = np.array([0.0, 0.0, 1.0], dtype=float)  # initial guess
 
     def state_to_voltages(x):
-        t2, t3, v3 = x
+        theta2, theta3, v3 = x
         V1c = 1.0 * np.exp(j*0.0)          # Slack
-        V2c = V2_spec * np.exp(j*t2)       # PV bus 
-        V3c = v3 * np.exp(j*t3)            # PQ bus 
+        V2c = V2_spec * np.exp(j*theta2)       # PV bus 
+        V3c = v3 * np.exp(j*theta3)            # PQ bus 
         return np.array([V1c, V2c, V3c])
 
     def mismatches(x):
@@ -71,7 +70,7 @@ def newton_raphson_3bus(Y_bus, V2_spec, PG2_spec, P3_load, Q3_load,
         F = mismatches(x)
         max_mis = np.max(np.abs(F))
         if verbose:
-            print(f"[NR] Iter {it+1}, x={x}, mismatches={F}, max|mis|={max_mis}")
+            print(f" Iteration: {it+1}, x={x}, mismatches={F}, max|mis|={max_mis}")
         
         if max_mis < tol:
             if verbose:
@@ -83,25 +82,25 @@ def newton_raphson_3bus(Y_bus, V2_spec, PG2_spec, P3_load, Q3_load,
         dx = np.linalg.solve(J, -F)
         x += dx
     else:
-        print("Newton–Raphson did NOT converge within max_iter.\n")
+        print("Newton–Raphson did NOT converge w/in max iteration.\n")
 
     return x
 
 
 # main method starts here  ------------------------------------
 
-# Complex unit for convenience
+
 j = 1j
 
-V1 = 1.0 + 0j    # Slack bus voltage 
-V2 = 1.05        # PV bus voltage magnitude
-PG2 = 0.6661     # Active power at bus 2 (p.u.)
+V1 = 1.0 + 0j   
+V2 = 1.05        
+PG2 = 0.6661    
 
-S3 = 2.8653 + 1.2244j  # Load at bus 3: P3=2.8653, Q3=1.2244
+S3 = 2.8653 + 1.2244j  
 P3_load = S3.real
 Q3_load = S3.imag
 
-# Transmission line and shunt:
+
 ZL = 0 + j*0.1   #  reactance 
 YC = 0 + j*0.01  #  admittance 
 
@@ -128,7 +127,7 @@ V_NR = np.array([
         V3_NR*np.exp(j*theta3_NR)
 ])
     # final bus voltages
-print("Final bus voltages (NR method):")
+print("Final bus voltages:")
 for b in range(3):
     mag = np.abs(V_NR[b])
     ang = np.angle(V_NR[b], deg=True)
@@ -136,7 +135,7 @@ for b in range(3):
 
 # Line flows
 flows_NR = line_flows(V_NR)
-print("\nLine flows and losses (NR method):")
+print("\nLine flows and losses:")
 for (i,j), (S_ij, S_ji, S_loss) in flows_NR.items():
     print(f"  Line {i}-{j}:")
     print(f"    S_ij = {S_ij.real:.4f} + j{S_ij.imag:.4f} p.u.")
