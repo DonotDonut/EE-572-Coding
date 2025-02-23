@@ -9,20 +9,14 @@ Ybus = 1j * np.array([
     [ 20.0,  10.0, -30.0]
 ])
 
-# Extract B' and B'' (Decoupled Matrices)
+# Extract B' matrix for FDPF (Neglecting resistances)
 B_prime = np.array([
-    [-10.0, -9.346],
-    [-9.346, 20.0]
+    [-24.3, 10.0],
+    [10.0, -30.0]
 ])
 
-B_doubleprime = np.array([
-    [-10.0, -0.304],
-    [-0.304, 20.0]
-])
-
-# Precompute inverse matrices for fast FDPF updates
+# Precompute inverse matrix for fast FDPF updates
 B_prime_inv = np.linalg.inv(B_prime)
-B_doubleprime_inv = np.linalg.inv(B_doubleprime)
 
 # ----------------------------------------
 # 2) Bus Specifications
@@ -31,8 +25,8 @@ B_doubleprime_inv = np.linalg.inv(B_doubleprime)
 # Bus 2 = PQ bus (unknown V2, θ2)
 # Bus 3 = PV bus (unknown θ3, fixed V3=1.0 p.u.)
 
-P_spec = np.array([0.8, 0.5])  # Specified active power injections (bus 2 & 3)
-Q_spec = np.array([0.3])       # Specified reactive power injection (bus 2 only)
+P_spec = np.array([-0.4, -0.2])  # Specified active power injections (bus 2 & 3)
+Q_spec = np.array([-0.1])        # Specified reactive power injection (bus 2 only)
 
 # ----------------------------------------
 # 3) Initial Guesses
@@ -41,7 +35,7 @@ theta = np.array([0.0, 0.0])  # Initial angles θ2 and θ3
 V = np.array([1.0, 1.0])      # Initial voltage magnitudes (V2, V3)
 
 # Convergence parameters
-max_iter = 10
+max_iter = 30
 tolerance = 1e-5
 
 # ----------------------------------------
@@ -52,34 +46,16 @@ for iteration in range(1, max_iter + 1):
     # ----------------------------------
     # Step 1: P-Iteration (Solve for θ2, θ3)
     # ----------------------------------
-    mismatch_P = np.array([0.05 * np.exp(-0.8 * iteration),  # Simulated ΔP2
-                           0.04 * np.exp(-0.8 * iteration)]) # Simulated ΔP3
+    mismatch_P = np.array([-0.0039, -0.0002])  # Given test mismatches for P
     dtheta = B_prime_inv @ mismatch_P
     theta += dtheta
 
-    # ----------------------------------
-    # Step 2: Q-Iteration (Solve for V2)
-    # ----------------------------------
-    mismatch_Q = 0.03 * np.exp(-0.8 * iteration)  # Simulated ΔQ2
-    dV2 = B_doubleprime_inv[0, 0] * mismatch_Q  # Assuming B'' is mostly diagonal
-    V[0] += dV2
-
     # Compute mismatch error
-    max_mismatch = max(abs(mismatch_P).max(), abs(mismatch_Q))
-
-    # Print Jacobian Entries (approximate derivatives)
-    dP_dTheta = B_prime  # Approximation (∂P/∂θ)
-    dP_dV = np.zeros_like(B_prime)  # FDPF assumes decoupled, so ∂P/∂V ~ 0
-    dQ_dTheta = np.zeros_like(B_doubleprime)  # FDPF assumes ∂Q/∂θ ~ 0
-    dQ_dV = B_doubleprime  # Approximation (∂Q/∂V)
+    max_mismatch = abs(mismatch_P).max()
 
     print(f"Iteration {iteration}:")
     print(f"  Mismatch P: {mismatch_P}")
-    print(f"  Mismatch Q: {mismatch_Q}")
-    print(f"  dP/dTheta: \n{dP_dTheta}")
-    print(f"  dP/dV (ignored in FDPF): \n{dP_dV}")
-    print(f"  dQ/dTheta (ignored in FDPF): \n{dQ_dTheta}")
-    print(f"  dQ/dV: \n{dQ_dV}")
+    print(f"  dP/dTheta: \n{B_prime}")
 
     if max_mismatch < tolerance:
         break
@@ -106,6 +82,7 @@ Q_flow = np.imag(S_flow)
 # ----------------------------------------
 print("\nFinal Results:")
 print(f"Total Iterations: {iteration}")
+
 print("\nBus Voltages:")
 for i in range(3):
     print(f"  Bus {i+1}: |V| = {V_full[i]:.4f}, θ = {theta_full[i]:.4f} rad")
