@@ -50,7 +50,7 @@ Y_bus = np.array([
 
 
 # DC Power Flow Results 
-print("  Dc power flow ")
+print(" Dc power flow ")
 print("============================================")
 DC_theta2, DC_theta3 = dc_power_flow(Y_bus, PG2, P3_load)
 print(f"DC angles (rad): theta2={DC_theta2:.6f}, theta3={DC_theta3:.6f}")
