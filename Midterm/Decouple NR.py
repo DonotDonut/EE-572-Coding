@@ -100,9 +100,9 @@ while True:
     
     ea = np.max(np.abs(Pm))
     print(f"Iteration {Iter+1}:")
-    print("  Mismatch vector:", Pm)
-    print("  Max mismatch error: {:.6f}".format(ea))
-    print("  Jacobian matrix:")
+    print("Mismatch vector:", Pm)
+    print("Max mismatch error: {:.6f}".format(ea))
+    print("Jacobian matrix:")
     print(J)
     print("-" * 60)
     

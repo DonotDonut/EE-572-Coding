@@ -91,7 +91,6 @@ def fdpf(Ybus, Sbus, V0, Bp, Bpp, ref, pv, pq, tol, max_it, verbose):
 
 j = 1j
 
-# Input data
 V1 = 1.0 + 0j       
 V2 = 1.05            
 PG2 = 0.6661         
