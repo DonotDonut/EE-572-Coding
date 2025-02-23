@@ -33,14 +33,14 @@ P3_load = S3.real
 Q3_load = S3.imag
 
 
-ZL = 0 + j*0.1   #  reactance 
-YC = 0 + j*0.01  #  admittance 
+ZL = 0 + j*0.1   
+YC = 0 + j*0.01 
 
 # convergence criteria 
-max_iter = 100 # max iterations 
-tol = 0.001 # tolerance
+max_iter = 100 
+tol = 0.001 
 
-# Admittance Matrix Calculation
+
 Y_bus = np.array([
     [ 2 / ZL + YC,      -1 / ZL,       -1 / ZL     ],
     [     -1 / ZL,  1 / ZL + 1 / ZL + YC,  -1 / ZL ],
