@@ -34,13 +34,13 @@ def line_flows(V):
 def newton_raphson_3bus(Y_bus, V2_spec, PG2_spec, P3_load, Q3_load, tol, max_iter, verbose=True):
   
     # x = [theta2, theta3, V3]
-    x = np.array([0.0, 0.0, 1.0], dtype=float)  # initial guess
+    x = np.array([0.0, 0.0, 1.0], dtype=float) # initial guess
 
     def state_to_voltages(x):
         theta2, theta3, v3 = x
-        V1c = 1.0 * np.exp(j*0.0)          # Slack
-        V2c = V2_spec * np.exp(j*theta2)       # PV bus 
-        V3c = v3 * np.exp(j*theta3)            # PQ bus 
+        V1c = 1.0 * np.exp(j*0.0) # Slack
+        V2c = V2_spec * np.exp(j*theta2) # PV bus 
+        V3c = v3 * np.exp(j*theta3) # PQ bus 
         return np.array([V1c, V2c, V3c])
 
     def mismatches(x):
@@ -77,11 +77,12 @@ def newton_raphson_3bus(Y_bus, V2_spec, PG2_spec, P3_load, Q3_load, tol, max_ite
                 print(f"Newton–Raphson converged in {it+1} iterations.\n")
             break
         
-        # Solve for state update
+
         J = jacobian_fd(x)
         dx = np.linalg.solve(J, -F)
         x += dx
     else:
+        # note to self: debugging 
         print("Newton–Raphson did NOT converge w/in max iteration.\n")
 
     return x
@@ -101,44 +102,43 @@ P3_load = S3.real
 Q3_load = S3.imag
 
 
-ZL = 0 + j*0.1   #  reactance 
-YC = 0 + j*0.01  #  admittance 
+ZL = 0 + j*0.1 
+YC = 0 + j*0.01 
 
 # convergence criteria 
-max_iter = 100 # max iterations 
-tol = 0.001 # tolerance
+max_iter = 100 
+tol = 0.001 
 
-# Admittance Matrix Calculation
 Y_bus = np.array([
     [ 2 / ZL + YC,      -1 / ZL,       -1 / ZL     ],
     [     -1 / ZL,  1 / ZL + 1 / ZL + YC,  -1 / ZL ],
     [     -1 / ZL,      -1 / ZL,       2 / ZL + YC ]
 ], dtype=complex)
 
-# Newton Raphson Power Flow Results 
-print("   Newton Raphson Power Flow ")
+
+print(" Newton Raphson Power Flow ")
 print("============================================")
 x_NR = newton_raphson_3bus( Y_bus, V2, PG2, P3_load, Q3_load, tol, max_iter, verbose=True)
-theta2_NR, theta3_NR, V3_NR = x_NR # results  
-# Build final voltage phasors
+theta2_NR, theta3_NR, V3_NR = x_NR  
+
 V_NR = np.array([
         1.0*np.exp(j*0.0),
         V2*np.exp(j*theta2_NR),
         V3_NR*np.exp(j*theta3_NR)
 ])
-    # final bus voltages
+
 print("Final bus voltages:")
 for b in range(3):
     mag = np.abs(V_NR[b])
     ang = np.angle(V_NR[b], deg=True)
-    print(f"  Bus {b+1}: |V|={mag:.4f}, angle={ang:.2f} deg")
+    print(f"Bus {b+1}: |V|={mag:.4f}, angle={ang:.2f} deg")
 
-# Line flows
+
 flows_NR = line_flows(V_NR)
 print("\nLine flows and losses:")
 for (i,j), (S_ij, S_ji, S_loss) in flows_NR.items():
-    print(f"  Line {i}-{j}:")
-    print(f"    S_ij = {S_ij.real:.4f} + j{S_ij.imag:.4f} p.u.")
-    print(f"    S_ji = {S_ji.real:.4f} + j{S_ji.imag:.4f} p.u.")
-    print(f"    Loss = {S_loss.real:.4f} + j{S_loss.imag:.4f} p.u.")
+    print(f"Line {i}-{j}:")
+    print(f"S_ij = {S_ij.real:.4f} + j{S_ij.imag:.4f} p.u.")
+    print(f"S_ji = {S_ji.real:.4f} + j{S_ji.imag:.4f} p.u.")
+    print(f"Loss = {S_loss.real:.4f} + j{S_loss.imag:.4f} p.u.")
 print()

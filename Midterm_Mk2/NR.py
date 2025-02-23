@@ -38,7 +38,7 @@ def newton_raphson_3bus(Y_bus, V2_spec, PG2_spec, P3_load, Q3_load, tol, max_ite
 
     def state_to_voltages(x):
         theta2, theta3, v3 = x
-        V1c = 1.0 * np.exp(j*0.0)          # Slack
+        V1c = 1.0 * np.exp(j*0.0) # Slack
         V2c = V2_spec * np.exp(j*theta2)       # PV bus 
         V3c = v3 * np.exp(j*theta3)            # PQ bus 
         return np.array([V1c, V2c, V3c])
