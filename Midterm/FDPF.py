@@ -18,11 +18,7 @@ def fdpf(Ybus, Sbus, V0, Bp, Bpp, ref, pv, pq, tol, max_it, verbose):
     
     normP = np.linalg.norm(P, np.inf)
     normQ = np.linalg.norm(Q, np.inf)
-    if verbose > 1:
-        print('\niteration     max mismatch (p.u.)')
-        print('type   #        P            Q')
-        print('---- ----  -----------  -----------')
-        print('  -  {:3d}   {:10.3e}   {:10.3e}'.format(i, normP, normQ))
+
     if normP < tol and normQ < tol:
         converged = True
         if verbose > 1:
