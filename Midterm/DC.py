@@ -42,9 +42,9 @@ tol = 0.001
 
 
 Y_bus = np.array([
-    [ 2 / ZL + YC,      -1 / ZL,       -1 / ZL     ],
-    [     -1 / ZL,  1 / ZL + 1 / ZL + YC,  -1 / ZL ],
-    [     -1 / ZL,      -1 / ZL,       2 / ZL + YC ]
+    [ 2 / ZL + YC,               -1 / ZL,      -1 / ZL ],
+    [     -1 / ZL,  1 / ZL + 1 / ZL + YC,      -1 / ZL ],
+    [     -1 / ZL,               -1 / ZL,  2 / ZL + YC ]
 ], dtype=complex)
 
 

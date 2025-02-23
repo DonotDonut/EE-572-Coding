@@ -70,7 +70,7 @@ def newton_raphson_3bus(Y_bus, V2_spec, PG2_spec, P3_load, Q3_load, tol, max_ite
         F = mismatches(x)
         max_mis = np.max(np.abs(F))
         if verbose:
-            print(f" Iteration: {it+1}, x={x}, mismatches={F}, max|mis|={max_mis}")
+            print(f"Iteration: {it+1}, x={x}, mismatches={F}, max|mis|={max_mis}")
         
         if max_mis < tol:
             if verbose:
@@ -110,9 +110,9 @@ max_iter = 100
 tol = 0.001 
 
 Y_bus = np.array([
-    [ 2 / ZL + YC,      -1 / ZL,       -1 / ZL     ],
-    [     -1 / ZL,  1 / ZL + 1 / ZL + YC,  -1 / ZL ],
-    [     -1 / ZL,      -1 / ZL,       2 / ZL + YC ]
+    [ 2 / ZL + YC,               -1 / ZL,      -1 / ZL ],
+    [     -1 / ZL,  1 / ZL + 1 / ZL + YC,      -1 / ZL ],
+    [     -1 / ZL,               -1 / ZL,  2 / ZL + YC ]
 ], dtype=complex)
 
 

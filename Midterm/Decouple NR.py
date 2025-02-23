@@ -20,9 +20,9 @@ max_iter = 100
 tol = 0.001        
 
 Y_bus = np.array([
-    [2 / ZL + YC,      -1 / ZL,       -1 / ZL],
-    [-1 / ZL,  1 / ZL + 1 / ZL + YC,      -1 / ZL],
-    [-1 / ZL,         -1 / ZL, 2 / ZL + YC]
+    [ 2 / ZL + YC,               -1 / ZL,      -1 / ZL ],
+    [     -1 / ZL,  1 / ZL + 1 / ZL + YC,      -1 / ZL ],
+    [     -1 / ZL,               -1 / ZL,  2 / ZL + YC ]
 ], dtype=complex)
 
 n = Y_bus.shape[0]
@@ -96,7 +96,7 @@ while True:
     H_sub = H[np.ix_(pa, pa)]
     N_sub = N[np.ix_(pv, pv)]
     J = np.block([[H_sub, L],
-                  [M,    N_sub]])
+                  [M, N_sub]])
     
     ea = np.max(np.abs(Pm))
     print(f"Iteration {Iter+1}:")
@@ -129,7 +129,7 @@ print("\nFinal bus voltages (NR method):")
 for b in range(n):
     mag = np.abs(V_NR[b])
     ang = np.angle(V_NR[b], deg=True)
-    print(f"  Bus {b+1}: {mag:.4f}  {ang:.2f}°")
+    print(f"Bus {b+1}: {mag:.4f} {ang:.2f}°")
 
 def line_flows(V):
     flows = {}
@@ -145,10 +145,10 @@ def line_flows(V):
 flows_NR = line_flows(V_NR)
 print("\nLine flows and losses:")
 for (i, j), (S_ij, S_ji, S_loss) in flows_NR.items():
-    print(f"  Line {i}-{j}:")
-    print(f"    S_ij = {S_ij.real:.4f} + j{S_ij.imag:.4f} p.u.")
-    print(f"    S_ji = {S_ji.real:.4f} + j{S_ji.imag:.4f} p.u.")
-    print(f"    Loss = {S_loss.real:.4f} + j{S_loss.imag:.4f} p.u.")
+    print(f"Line {i}-{j}:")
+    print(f"S_ij = {S_ij.real:.4f} + j{S_ij.imag:.4f} p.u.")
+    print(f"S_ji = {S_ji.real:.4f} + j{S_ji.imag:.4f} p.u.")
+    print(f"Loss = {S_loss.real:.4f} + j{S_loss.imag:.4f} p.u.")
 
 print(f"\nTotal iterations: {Iter}")
 print(f"Final mismatch error: {ea:.6f}")

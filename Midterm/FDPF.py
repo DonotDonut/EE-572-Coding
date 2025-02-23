@@ -47,11 +47,9 @@ def fdpf(Ybus, Sbus, V0, Bp, Bpp, ref, pv, pq, tol, max_it, verbose):
             print("Bpp_reduced (for Q iteration):")
             print(Bpp_reduced)
         
-
         dVa = -lu_solve((lu_p, piv), P)
         Va[indices_pv_pq] += dVa
         V = Vm * np.exp(1j * Va)
-        
  
         mis = (V * np.conjugate(Ybus @ V) - Sbus) / Vm
         P = np.real(mis[indices_pv_pq])
@@ -60,7 +58,7 @@ def fdpf(Ybus, Sbus, V0, Bp, Bpp, ref, pv, pq, tol, max_it, verbose):
         normP = np.linalg.norm(P, np.inf)
         normQ = np.linalg.norm(Q, np.inf)
         if verbose > 1:
-            print('  P  {:3d}   {:10.3e}   {:10.3e}'.format(i, normP, normQ))
+            print('P {:3d} {:10.3e} {:10.3e}'.format(i, normP, normQ))
         if normP < tol and normQ < tol:
             converged = True
             break
@@ -76,14 +74,14 @@ def fdpf(Ybus, Sbus, V0, Bp, Bpp, ref, pv, pq, tol, max_it, verbose):
         normP = np.linalg.norm(P, np.inf)
         normQ = np.linalg.norm(Q, np.inf)
         if verbose > 1:
-            print('  Q  {:3d}   {:10.3e}   {:10.3e}'.format(i, normP, normQ))
+            print('Q {:3d} {:10.3e} {:10.3e}'.format(i, normP, normQ))
         if normP < tol and normQ < tol:
             converged = True
             break
 
     if verbose:
         if not converged:
-            print('\nFast-decoupled power flow did not converge in w/in max iterations.')
+            print('\n Did not converge within max iterations.')
     return V, converged, i
 
 # main method starts here  ------------------------------------
@@ -91,7 +89,6 @@ def fdpf(Ybus, Sbus, V0, Bp, Bpp, ref, pv, pq, tol, max_it, verbose):
 
 j = 1j
 
-# Input data
 V1 = 1.0 + 0j       
 V2 = 1.05            
 PG2 = 0.6661         
@@ -108,9 +105,9 @@ tol = 0.001
 
 
 Y_bus = np.array([
-    [2 / ZL + YC,      -1 / ZL,       -1 / ZL],
-    [-1 / ZL, 1 / ZL + 1 / ZL + YC,      -1 / ZL],
-    [-1 / ZL,         -1 / ZL, 2 / ZL + YC]
+    [ 2 / ZL + YC,               -1 / ZL,      -1 / ZL ],
+    [     -1 / ZL,  1 / ZL + 1 / ZL + YC,      -1 / ZL ],
+    [     -1 / ZL,               -1 / ZL,  2 / ZL + YC ]
 ], dtype=complex)
 
 
