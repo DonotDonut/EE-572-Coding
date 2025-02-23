@@ -125,7 +125,7 @@ while True:
 
 V_NR = np.array([Vm[i] * np.exp(1j * Delta[i]) for i in range(n)])
 
-print("\nFinal bus voltages (NR method):")
+print("\nFinal bus voltages:")
 for b in range(n):
     mag = np.abs(V_NR[b])
     ang = np.angle(V_NR[b], deg=True)
